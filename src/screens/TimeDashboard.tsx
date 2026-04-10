@@ -4,43 +4,14 @@ import {
 } from 'recharts';
 import { useStore } from '../store';
 import { ALL_CATEGORIES, type TimeCategory, CATEGORY_HEX } from '../types';
-import {
-  todayISO, formatHours, getWeekDates, getWeekdays, formatWeekDay,
-  formatDate,
-} from '../utils/dateUtils';
-import { startOfMonth, endOfMonth, subMonths, endOfWeek, eachWeekOfInterval, format } from 'date-fns';
+import { todayISO, formatHours, getWeekdays, formatWeekDay, formatDate } from '../utils/dateUtils';
+import { type Period, getPeriodRange } from '../utils/dashboardUtils';
+import PeriodSelector from '../components/PeriodSelector';
+import { startOfMonth, endOfWeek, eachWeekOfInterval, format } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { MapPin, Receipt } from 'lucide-react';
 
-type Period = '1uge' | '1mdr' | '3mdr' | '6mdr' | '12mdr' | 'custom';
-
-function toISO(d: Date) {
-  return format(d, 'yyyy-MM-dd');
-}
-
-function getPeriodRange(period: Period, customStart: string, customEnd: string): { start: string; end: string } {
-  const today = new Date();
-  switch (period) {
-    case '1uge': {
-      const { start, end } = getWeekDates(today);
-      return { start, end };
-    }
-    case '1mdr': return { start: toISO(startOfMonth(today)), end: toISO(endOfMonth(today)) };
-    case '3mdr': return { start: toISO(startOfMonth(subMonths(today, 2))), end: toISO(endOfMonth(today)) };
-    case '6mdr': return { start: toISO(startOfMonth(subMonths(today, 5))), end: toISO(endOfMonth(today)) };
-    case '12mdr': return { start: toISO(startOfMonth(subMonths(today, 11))), end: toISO(endOfMonth(today)) };
-    case 'custom': return { start: customStart, end: customEnd };
-  }
-}
-
-const PERIODS: { id: Period; label: string }[] = [
-  { id: '1uge', label: '1 uge' },
-  { id: '1mdr', label: '1 mdr' },
-  { id: '3mdr', label: '3 mdr' },
-  { id: '6mdr', label: '6 mdr' },
-  { id: '12mdr', label: '12 mdr' },
-  { id: 'custom', label: 'Tilpasset' },
-];
+function toISO(d: Date) { return format(d, 'yyyy-MM-dd'); }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -129,39 +100,15 @@ export default function TimeDashboard() {
             {formatDate(start)} – {formatDate(end)}
           </p>
         </div>
-        {/* Period selector */}
-        <div className="flex items-center gap-1 flex-wrap">
-          {PERIODS.map(p => (
-            <button
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                period === p.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-900 text-gray-400 border border-gray-800 hover:text-gray-100'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <PeriodSelector
+          value={period}
+          onChange={setPeriod}
+          customStart={customStart}
+          customEnd={customEnd}
+          onCustomStartChange={setCustomStart}
+          onCustomEndChange={setCustomEnd}
+        />
       </div>
-
-      {/* Custom date range */}
-      {period === 'custom' && (
-        <div className="flex gap-3 mb-6">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Fra</label>
-            <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Til</label>
-            <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-blue-500" />
-          </div>
-        </div>
-      )}
 
       {/* Top KPIs */}
       <div className="grid grid-cols-3 gap-3 mb-6">

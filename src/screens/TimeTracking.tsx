@@ -1,14 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { type TimeCategory, type TimeEntry, CATEGORY_TAILWIND, ALL_CATEGORIES } from '../types';
 import { todayISO, formatHours, getWeekDates, getWeekdays } from '../utils/dateUtils';
 import { getHolidayName } from '../utils/danishHolidays';
+import { parseHoursInput } from '../utils/dashboardUtils';
 import { v4 as uuidv4 } from 'uuid';
-import { CheckCircle2, MapPin, Receipt, AlertTriangle, Clock, Pencil, Trash2, X } from 'lucide-react';
+import {
+  CheckCircle2, MapPin, Receipt, AlertTriangle, Clock,
+  Pencil, Trash2, X, Search, ChevronDown,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
 
-const HOURS_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10];
+const HOURS_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8];
 
 function HolidayBadge({ date }: { date: string }) {
   const name = getHolidayName(date);
@@ -23,11 +27,14 @@ function HolidayBadge({ date }: { date: string }) {
 
 export default function TimeTracking() {
   const { clients, cases, entries, settings, addEntry, updateEntry, deleteEntry } = useStore();
+
+  // Form state
   const [date, setDate] = useState(todayISO());
   const [clientId, setClientId] = useState('');
   const [caseId, setCaseId] = useState('');
   const [category, setCategory] = useState<TimeCategory | ''>('');
   const [hours, setHours] = useState<number | ''>('');
+  const [hoursInput, setHoursInput] = useState('');
   const [description, setDescription] = useState('');
   const [onSite, setOnSite] = useState(false);
   const [onSiteType, setOnSiteType] = useState<TimeEntry['onSiteType']>('Undervisning');
@@ -36,20 +43,60 @@ export default function TimeTracking() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Searchable customer combobox state
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const clientInputRef = useRef<HTMLInputElement>(null);
+  const clientDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        clientInputRef.current &&
+        !clientInputRef.current.contains(e.target as Node) &&
+        clientDropdownRef.current &&
+        !clientDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowClientDropdown(false);
+        // Restore selected client name if user typed but didn't select
+        if (clientId) {
+          const selected = clients.find(c => c.id === clientId);
+          if (selected) setClientSearch(selected.name);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [clientId, clients]);
+
+  const filteredClients = useMemo(
+    () => {
+      if (!clientSearch.trim()) return clients;
+      const q = clientSearch.toLowerCase();
+      return clients.filter(c => c.name.toLowerCase().includes(q));
+    },
+    [clients, clientSearch]
+  );
+
   const clientCases = useMemo(
     () => cases.filter(c => c.clientId === clientId && c.status === 'Aktiv'),
     [cases, clientId]
   );
 
+  // Only recalculate for today and this week — stable date ranges
+  const today = todayISO();
+  const { start: wStart, end: wEnd } = useMemo(() => getWeekDates(), []);
+  const weekdays = useMemo(() => getWeekdays(wStart, wEnd), [wStart, wEnd]);
+
   const todayEntries = useMemo(
     () => entries.filter(e => e.date === date).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [entries, date]
   );
-
-  const todayHours = useMemo(() => entries.filter(e => e.date === todayISO()).reduce((s, e) => s + e.hours, 0), [entries]);
-
-  const weekDates = getWeekDates();
-  const weekdays = getWeekdays(weekDates.start, weekDates.end);
+  const todayHours = useMemo(
+    () => entries.filter(e => e.date === today).reduce((s, e) => s + e.hours, 0),
+    [entries, today]
+  );
   const weekHours = useMemo(
     () => entries.filter(e => weekdays.includes(e.date)).reduce((s, e) => s + e.hours, 0),
     [entries, weekdays]
@@ -59,11 +106,44 @@ export default function TimeTracking() {
     return settings.categoryNames[cat] ?? cat;
   }
 
+  function selectClient(id: string, name: string) {
+    setClientId(id);
+    setClientSearch(name);
+    setShowClientDropdown(false);
+    setCaseId('');
+  }
+
+  function handleClientSearchChange(value: string) {
+    setClientSearch(value);
+    setClientId(''); // clear selection while typing
+    setCaseId('');
+    setShowClientDropdown(true);
+  }
+
+  function selectHours(h: number) {
+    setHours(h);
+    setHoursInput(String(h).replace('.', ','));
+  }
+
+  function handleHoursInputChange(value: string) {
+    setHoursInput(value);
+    const parsed = parseHoursInput(value);
+    setHours(parsed);
+  }
+
+  function handleHoursInputBlur() {
+    if (hours !== '') {
+      setHoursInput(String(hours).replace('.', ','));
+    }
+  }
+
   function resetForm() {
     setClientId('');
+    setClientSearch('');
     setCaseId('');
     setCategory('');
     setHours('');
+    setHoursInput('');
     setDescription('');
     setOnSite(false);
     setOnSiteType('Undervisning');
@@ -99,12 +179,15 @@ export default function TimeTracking() {
   function startEdit(entry: TimeEntry) {
     const c = cases.find(c => c.id === entry.caseId);
     if (c) {
+      const client = clients.find(cl => cl.id === c.clientId);
       setClientId(c.clientId);
+      setClientSearch(client?.name ?? '');
       setCaseId(entry.caseId);
     }
     setDate(entry.date);
     setCategory(entry.category);
     setHours(entry.hours);
+    setHoursInput(String(entry.hours).replace('.', ','));
     setDescription(entry.description);
     setOnSite(entry.onSite);
     setOnSiteType(entry.onSiteType ?? 'Undervisning');
@@ -121,7 +204,7 @@ export default function TimeTracking() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Registrer tid</h1>
         <p className="text-gray-400 text-sm mt-1">
-          {format(new Date(), "EEEE d. MMMM yyyy", { locale: da })}
+          {format(new Date(), 'EEEE d. MMMM yyyy', { locale: da })}
         </p>
       </div>
 
@@ -142,20 +225,65 @@ export default function TimeTracking() {
           </div>
         </div>
 
-        {/* Kunde */}
+        {/* Kunde — søgbar combobox */}
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Kunde <span className="text-red-400">*</span>
           </label>
-          <select
-            required
-            value={clientId}
-            onChange={e => { setClientId(e.target.value); setCaseId(''); }}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500"
-          >
-            <option value="">Vælg kunde...</option>
-            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            <input
+              ref={clientInputRef}
+              type="text"
+              value={clientSearch}
+              onChange={e => handleClientSearchChange(e.target.value)}
+              onFocus={() => setShowClientDropdown(true)}
+              placeholder="Søg efter kunde..."
+              autoComplete="off"
+              className={`w-full pl-9 pr-9 py-2 bg-gray-800 border rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors ${
+                clientId ? 'border-blue-500/50' : 'border-gray-700'
+              }`}
+            />
+            {clientId && (
+              <button
+                type="button"
+                onClick={() => { setClientId(''); setClientSearch(''); setCaseId(''); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-500 hover:text-gray-300 rounded"
+              >
+                <X size={13} />
+              </button>
+            )}
+            {!clientId && (
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            )}
+
+            {/* Dropdown */}
+            {showClientDropdown && (
+              <div
+                ref={clientDropdownRef}
+                className="absolute top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-xl z-20 shadow-xl overflow-hidden max-h-52 overflow-y-auto"
+              >
+                {filteredClients.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-gray-500">Ingen kunder fundet</p>
+                ) : (
+                  filteredClients.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={e => { e.preventDefault(); selectClient(c.id, c.name); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                        clientId === c.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-200 hover:bg-gray-700'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sag */}
@@ -168,7 +296,7 @@ export default function TimeTracking() {
             value={caseId}
             onChange={e => setCaseId(e.target.value)}
             disabled={!clientId}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-blue-500 disabled:opacity-40"
           >
             <option value="">{clientId ? 'Vælg sag...' : 'Vælg først en kunde'}</option>
             {clientCases.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
@@ -207,22 +335,41 @@ export default function TimeTracking() {
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-1.5">
             Timer <span className="text-red-400">*</span>
+            {hours !== '' && (
+              <span className="ml-2 text-blue-400 font-semibold">{String(hours).replace('.', ',')}t valgt</span>
+            )}
           </label>
-          <div className="flex flex-wrap gap-1.5">
+          {/* Quick-select knapper */}
+          <div className="flex flex-wrap gap-1.5 mb-2">
             {HOURS_OPTIONS.map(h => (
               <button
                 key={h}
                 type="button"
-                onClick={() => setHours(h)}
+                onClick={() => selectHours(h)}
                 className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
                   hours === h
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-100 hover:border-gray-600'
                 }`}
               >
-                {h}
+                {String(h).replace('.', ',')}
               </button>
             ))}
+          </div>
+          {/* Fri indtastning */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={hoursInput}
+              onChange={e => handleHoursInputChange(e.target.value)}
+              onBlur={handleHoursInputBlur}
+              placeholder="Fx. 1,5 eller 2,25"
+              className={`w-36 px-3 py-2 bg-gray-800 border rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors ${
+                hoursInput && hours === '' ? 'border-red-500/50' : 'border-gray-700'
+              }`}
+            />
+            <span className="text-xs text-gray-600">Brug komma eller punktum</span>
           </div>
         </div>
 
@@ -240,7 +387,6 @@ export default function TimeTracking() {
 
         {/* Toggles */}
         <div className="flex flex-wrap gap-4">
-          {/* On-site */}
           <div className="space-y-2">
             <button
               type="button"
@@ -274,7 +420,6 @@ export default function TimeTracking() {
             )}
           </div>
 
-          {/* Faktureret */}
           <button
             type="button"
             onClick={() => setInvoiced(!invoiced)}
@@ -305,15 +450,13 @@ export default function TimeTracking() {
             disabled={!caseId || !category || !hours}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
-            {editingId ? (
-              <><Pencil size={14} /> Gem ændringer</>
-            ) : (
-              <><Clock size={14} /> Gem registrering</>
-            )}
+            {editingId
+              ? <><Pencil size={14} /> Gem ændringer</>
+              : <><Clock size={14} /> Gem registrering</>
+            }
           </button>
         </div>
 
-        {/* Saved confirmation */}
         {saved && (
           <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">
             <CheckCircle2 size={16} />
@@ -322,15 +465,13 @@ export default function TimeTracking() {
         )}
       </form>
 
-      {/* Today's entries */}
+      {/* Entries for selected date */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-medium text-gray-400">
             {date === todayISO() ? 'Dagens registreringer' : `Registreringer – ${date}`}
           </h2>
-          {holidayName && (
-            <span className="text-xs text-red-400">{holidayName}</span>
-          )}
+          {holidayName && <span className="text-xs text-red-400">{holidayName}</span>}
         </div>
 
         {todayEntries.length === 0 ? (
@@ -361,9 +502,7 @@ export default function TimeTracking() {
                             <MapPin size={10} /> On-site{entry.onSiteType ? ` · ${entry.onSiteType}` : ''}
                           </span>
                         )}
-                        {entry.invoiced && (
-                          <span className="text-xs text-blue-400">Faktureret</span>
-                        )}
+                        {entry.invoiced && <span className="text-xs text-blue-400">Faktureret</span>}
                       </div>
                       {entry.description && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate">{entry.description}</p>
