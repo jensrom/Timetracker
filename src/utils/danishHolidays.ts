@@ -98,13 +98,9 @@ export function countHolidaysInRange(start: string, end: string): DanishHoliday[
   const s = new Date(start);
   const e = new Date(end);
   const result: DanishHoliday[] = [];
-  const yearsNeeded = new Set<number>();
-  const cur = new Date(s);
-  while (cur <= e) {
-    yearsNeeded.add(cur.getFullYear());
-    cur.setFullYear(cur.getFullYear() + 1);
-  }
-  yearsNeeded.forEach(year => {
+  const yearStart = s.getFullYear();
+  const yearEnd = e.getFullYear();
+  for (let year = yearStart; year <= yearEnd; year++) {
     getDanishHolidays(year).forEach(h => {
       const hDate = new Date(h.date);
       const dow = hDate.getDay();
@@ -112,6 +108,6 @@ export function countHolidaysInRange(start: string, end: string): DanishHoliday[
         result.push(h);
       }
     });
-  });
+  }
   return result;
 }
