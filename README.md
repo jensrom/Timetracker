@@ -1,36 +1,43 @@
 # Timetracker
 
-Intern tidsregistreringsværktøj bygget med React/Electron.
+Intern tidsregistreringsværktøj bygget med React/Electron til daglig brug.
 
 ## Features
 
-- Registrer timer på kundesager med kategorier og on-site markering
-- Dashboard med stacked bar chart og periodefilter (1 uge – 12 mdr)
-- Normtid & Afspadsering — spor +/- saldo mod 37t/uge
-- Kunder og Sager med CRUD og progress-bar
+- **Registrer tid** — Kunde → Sag → Kategori → Timer, on-site toggle med undertype, helligdagsindikator
+- **Dashboard** — Stacked bar chart (Recharts), periodefilter 1 uge–12 mdr, KPI-kort pr. kategori
+- **Normtid & Afspadsering** — Spor +/- saldo mod 37t/uge, helligdage trækkes automatisk fra
+- **Sager** — CRUD med progress-bar mod estimerede timer
+- **Kunder** — CRUD med søgning og timeoversigt
+- **Indstillinger** — Omdøb kategorier, juster normtid, CSV/JSON export
 - Danske helligdage beregnet automatisk (Gauss påske-algoritme)
-- CSV-eksport og JSON-backup
-- Electron desktop app (.exe) til Windows
 
 ## Tech Stack
 
-- React 18 + TypeScript + Vite
-- Tailwind CSS (dark mode)
-- Zustand state management
-- Recharts (dashboards)
-- Electron + electron-builder
+| | |
+|---|---|
+| React 18 + TypeScript + Vite | UI framework |
+| Tailwind CSS | Styling (dark mode) |
+| Zustand | State management |
+| Recharts | Dashboards og grafer |
+| date-fns | Datoberegning (dansk locale) |
+| Electron + electron-builder | Desktop .exe wrapper |
 
 ## Kør lokalt
 
 ```bash
 npm install
-npm run dev          # Web-version i browser
+npm run dev          # Web-version i browser på localhost:5173
 npm run electron:dev # Kør i Electron (kræver npm run dev kørende)
 ```
 
-## Byg .exe
+## Byg Windows .exe
 
 ```bash
 npm run electron:build
-# Output i /release
+# Output placeres i /release
 ```
+
+## Danske helligdage
+
+Beregnes dynamisk via Gauss påske-algoritme. Helligdage på hverdage trækkes automatisk fra normtiden i Normtid-dashboardet.
