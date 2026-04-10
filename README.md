@@ -10,6 +10,7 @@ Intern tidsregistreringsværktøj bygget med React/Electron til daglig brug.
 - **Sager** — CRUD med progress-bar mod estimerede timer
 - **Kunder** — CRUD med søgning og timeoversigt
 - **Indstillinger** — Omdøb kategorier, juster normtid, CSV/JSON export
+- Danske helligdage beregnet automatisk (Gauss påske-algoritme)
 
 ## Tech Stack
 
@@ -27,6 +28,7 @@ Intern tidsregistreringsværktøj bygget med React/Electron til daglig brug.
 ```bash
 npm install
 npm run dev          # Web-version i browser på localhost:5173
+npm run electron:dev # Kør i Electron (kræver npm run dev kørende)
 ```
 
 ## Byg Windows .exe
