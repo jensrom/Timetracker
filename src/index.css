@@ -4,8 +4,8 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: #030712;
-    color: #f9fafb;
+    background: #f9fafb;
+    color: #111827;
     font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -18,7 +18,7 @@
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #374151 transparent;
+    scrollbar-color: #d1d5db transparent;
     box-sizing: border-box;
   }
 
@@ -28,7 +28,7 @@
   }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
-    background-color: #374151;
+    background-color: #d1d5db;
     border-radius: 3px;
   }
 }

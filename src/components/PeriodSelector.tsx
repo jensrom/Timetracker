@@ -27,7 +27,7 @@ export default function PeriodSelector({
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               value === p.id
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-900 text-gray-400 border border-gray-800 hover:text-gray-100'
+                : 'bg-white text-gray-600 border border-gray-200 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             {p.label}
@@ -43,7 +43,7 @@ export default function PeriodSelector({
               type="date"
               value={customStart}
               onChange={e => onCustomStartChange(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500"
             />
           </div>
           <div>
@@ -52,7 +52,7 @@ export default function PeriodSelector({
               type="date"
               value={customEnd}
               onChange={e => onCustomEndChange(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-100 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>

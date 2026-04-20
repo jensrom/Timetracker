@@ -69,14 +69,9 @@ export default function Clients() {
     setShowForm(false);
   }
 
-  function handleDelete(id: string) {
-    deleteClient(id);
-    setDeleteConfirm(null);
-  }
-
   function getClientStats(clientId: string) {
     const clientCases = cases.filter(c => c.clientId === clientId);
-    const activeCases = clientCases.filter(c => c.status === 'Aktiv').length;
+    const activeCases = clientCases.filter(c => c.status === 'Aktiv' || c.status === 'Under behandling' || c.status === 'Ny').length;
     const totalHours = entries
       .filter(e => clientCases.some(c => c.id === e.caseId))
       .reduce((sum, e) => sum + e.hours, 0);
@@ -85,11 +80,10 @@ export default function Clients() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Kunder</h1>
-          <p className="text-gray-400 text-sm mt-1">{clients.length} kunder registreret</p>
+          <h1 className="text-2xl font-bold text-gray-900">Kunder</h1>
+          <p className="text-gray-500 text-sm mt-1">{clients.length} kunder registreret</p>
         </div>
         <button
           onClick={openCreate}
@@ -99,22 +93,20 @@ export default function Clients() {
         </button>
       </div>
 
-      {/* Search */}
       <div className="relative mb-4">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
           placeholder="Søg efter navn, kontaktperson eller CVR..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
       </div>
 
-      {/* Client list */}
       <div className="space-y-3">
         {filtered.length === 0 && (
-          <div className="text-center py-16 text-gray-600">
+          <div className="text-center py-16 text-gray-400">
             <Building2 size={40} className="mx-auto mb-3 opacity-30" />
             <p>Ingen kunder fundet</p>
           </div>
@@ -124,34 +116,32 @@ export default function Clients() {
           return (
             <div
               key={client.id}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors"
+              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center shrink-0">
-                    <Building2 size={18} className="text-blue-400" />
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                    <Building2 size={18} className="text-blue-600" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-white truncate">{client.name}</h3>
-                    {client.cvr && (
-                      <p className="text-xs text-gray-500 mt-0.5">CVR: {client.cvr}</p>
-                    )}
+                    <h3 className="font-semibold text-gray-900 truncate">{client.name}</h3>
+                    {client.cvr && <p className="text-xs text-gray-500 mt-0.5">CVR: {client.cvr}</p>}
                     <div className="flex flex-wrap gap-3 mt-2">
                       {client.contactPerson && (
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <User size={12} className="text-gray-600" />
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <User size={12} className="text-gray-400" />
                           {client.contactPerson}
                         </span>
                       )}
                       {client.contactEmail && (
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Mail size={12} className="text-gray-600" />
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <Mail size={12} className="text-gray-400" />
                           {client.contactEmail}
                         </span>
                       )}
                       {client.contactPhone && (
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Phone size={12} className="text-gray-600" />
+                        <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <Phone size={12} className="text-gray-400" />
                           {client.contactPhone}
                         </span>
                       )}
@@ -160,29 +150,26 @@ export default function Clients() {
                 </div>
 
                 <div className="flex items-center gap-6 shrink-0">
-                  {/* Stats */}
                   <div className="hidden sm:flex items-center gap-4 text-right">
                     <div>
-                      <p className="text-lg font-bold text-white">{stats.totalHours.toFixed(1)}t</p>
-                      <p className="text-xs text-gray-600">Total timer</p>
+                      <p className="text-lg font-bold text-gray-900">{stats.totalHours.toFixed(1)}t</p>
+                      <p className="text-xs text-gray-400">Total timer</p>
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-white">{stats.activeCases}</p>
-                      <p className="text-xs text-gray-600">Aktive sager</p>
+                      <p className="text-lg font-bold text-gray-900">{stats.activeCases}</p>
+                      <p className="text-xs text-gray-400">Aktive sager</p>
                     </div>
                   </div>
-
-                  {/* Actions */}
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => openEdit(client)}
-                      className="p-2 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(client.id)}
-                      className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -190,21 +177,18 @@ export default function Clients() {
                 </div>
               </div>
 
-              {/* Delete confirm */}
               {deleteConfirm === client.id && (
-                <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
-                  <p className="text-sm text-red-400">
-                    Slet kunden og alle tilknyttede sager og timer?
-                  </p>
+                <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                  <p className="text-sm text-red-600">Slet kunden og alle tilknyttede sager og timer?</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-100 bg-gray-800 rounded-lg"
+                      className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg"
                     >
                       Annuller
                     </button>
                     <button
-                      onClick={() => handleDelete(client.id)}
+                      onClick={() => { deleteClient(client.id); setDeleteConfirm(null); }}
                       className="px-3 py-1.5 text-xs text-white bg-red-600 hover:bg-red-700 rounded-lg"
                     >
                       Slet
@@ -217,73 +201,72 @@ export default function Clients() {
         })}
       </div>
 
-      {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-gray-800">
-              <h2 className="text-lg font-semibold text-white">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {editingId ? 'Rediger kunde' : 'Ny kunde'}
               </h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="p-1.5 text-gray-500 hover:text-gray-100 hover:bg-gray-800 rounded-lg"
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
               >
                 <X size={16} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                  Firmanavn <span className="text-red-400">*</span>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Firmanavn <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   placeholder="Virksomhedsnavn"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">CVR-nummer</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">CVR-nummer</label>
                 <input
                   type="text"
                   value={form.cvr}
                   onChange={e => setForm(f => ({ ...f, cvr: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   placeholder="12345678"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1.5">Kontaktperson</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Kontaktperson</label>
                 <input
                   type="text"
                   value={form.contactPerson}
                   onChange={e => setForm(f => ({ ...f, contactPerson: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   placeholder="Navn"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">E-mail</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">E-mail</label>
                   <input
                     type="email"
                     value={form.contactEmail}
                     onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
                     placeholder="email@firma.dk"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Telefon</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Telefon</label>
                   <input
                     type="tel"
                     value={form.contactPhone}
                     onChange={e => setForm(f => ({ ...f, contactPhone: e.target.value }))}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
                     placeholder="12345678"
                   />
                 </div>
@@ -292,7 +275,7 @@ export default function Clients() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 py-2 text-sm text-gray-400 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                  className="flex-1 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   Annuller
                 </button>
